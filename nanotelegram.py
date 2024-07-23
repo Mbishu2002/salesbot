@@ -2,6 +2,7 @@ from flask import Flask, request
 from telegram import Update, Bot
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext
 from telegram.helpers import escape_markdown
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 import os
 from dotenv import load_dotenv
 import logging
@@ -49,7 +50,11 @@ async def button(update: Update, context: CallbackContext):
     caption = f"{escape_markdown(prop['title'])}\nLocation: {escape_markdown(prop['location'])}\nPrice: {escape_markdown(prop['price'])}"
     await query.message.reply_photo(photo=prop['image'], caption=caption)
 
+# Create the application object globally
+application = None
+
 async def main():
+    global application
     application = Application.builder().token(TOKEN).build()
 
     application.add_handler(CommandHandler('start', start))
@@ -59,9 +64,6 @@ async def main():
     # Start the application
     await application.initialize()
     await application.start()
-    await application.updater.start_polling()
-
-    return application
 
 @app.route(f'/{TOKEN}', methods=['POST'])
 def webhook():
@@ -70,5 +72,6 @@ def webhook():
     return 'ok', 200
 
 if __name__ == '__main__':
-    application = asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
     app.run(host='0.0.0.0', port=PORT)
