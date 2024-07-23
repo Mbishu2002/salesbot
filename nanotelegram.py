@@ -1,8 +1,7 @@
 from flask import Flask, request
 from telegram import Update, Bot
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext
-from telegram.helpers import escape_markdown
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.helpers import escape_markdown, InlineKeyboardButton, InlineKeyboardMarkup
 import os
 from dotenv import load_dotenv
 import logging
@@ -15,7 +14,7 @@ TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 PORT = int(os.getenv('PORT', 5000))
 
 app = Flask(__name__)
-bot = Bot(token=TOKEN)  # Ensure bot is defined here
+bot = Bot(token=TOKEN)
 
 # Set up logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -66,10 +65,24 @@ async def main():
     await application.start()
 
 @app.route(f'/{TOKEN}', methods=['POST'])
-def webhook():
+def respond():
     update = Update.de_json(request.get_json(force=True), bot)
-    asyncio.run(application.process_update(update))
-    return 'ok', 200
+    chat_id = update.message.chat.id
+    msg_id = update.message.message_id
+    text = update.message.text.encode('utf-8').decode()
+
+    # Use asyncio to run async functions
+    async def process_update():
+        response = await get_response(text)
+        await bot.send_message(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
+
+    asyncio.run(process_update())
+
+    return 'ok'
+
+async def get_response(text):
+    # Example response generation logic
+    return "This is a response to your message: " + text
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
