@@ -66,17 +66,27 @@ async def main():
 
 @app.route(f'/{TOKEN}', methods=['POST'])
 def respond():
+    # Retrieve the update from the request
     update = Update.de_json(request.get_json(force=True), bot)
-    chat_id = update.message.chat.id
-    msg_id = update.message.message_id
-    text = update.message.text.encode('utf-8').decode()
+    
+    # Check if the update has a message
+    if update.message:
+        chat_id = update.message.chat.id
+        msg_id = update.message.message_id
+        text = update.message.text.encode('utf-8').decode()
 
-    # Use asyncio to run async functions
-    async def process_update():
-        response = await get_response(text)
-        await bot.send_message(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
+        # Define an async function to process the message
+        async def process_update():
+            try:
+                response = await get_response(text)
+                await bot.send_message(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
+            except Exception as e:
+                logger.error(f"Failed to send message: {e}")
 
-    asyncio.run(process_update())
+        # Run the async function
+        asyncio.run(process_update())
+    else:
+        logger.warning("Received update without a message")
 
     return 'ok'
 
