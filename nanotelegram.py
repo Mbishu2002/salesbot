@@ -1,7 +1,7 @@
 from flask import Flask, request
-from telegram import Update, Bot
+from telegram import Update, Bot, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext
-from telegram.helpers import escape_markdown, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.helpers import escape_markdown
 import os
 from dotenv import load_dotenv
 import logging
