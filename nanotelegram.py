@@ -1,5 +1,5 @@
 from flask import Flask, request
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, Bot
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext
 from telegram.helpers import escape_markdown
 import os
@@ -14,9 +14,11 @@ TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 PORT = int(os.getenv('PORT', 5000))
 
 app = Flask(__name__)
+bot = Bot(token=TOKEN)  # Ensure bot is defined here
 
 # Set up logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Dummy property data
 properties = [
