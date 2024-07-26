@@ -89,7 +89,7 @@ def send_carousel_message(to, results):
     }
 
     response = requests.post(WHATSAPP_API_URL, headers=headers, json=payload)
-    print(response.json())  # Print the response for debugging
+    print(response.json())  
 
 def send_text_message(to, text):
     headers = {
@@ -107,7 +107,8 @@ def send_text_message(to, text):
     }
 
     response = requests.post(WHATSAPP_API_URL, headers=headers, json=payload)
-    print(response.json())  # Print the response for debugging
+    print(response.json())  
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
+
