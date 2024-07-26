@@ -1,100 +1,113 @@
-from flask import Flask, request
-from telegram import Update, Bot, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext
-from telegram.helpers import escape_markdown
+from flask import Flask, request, jsonify
+import requests
 import os
 from dotenv import load_dotenv
-import logging
-import asyncio
 
-# Load environment variables from a .env file
+# Load environment variables from .env file
 load_dotenv()
 
-TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-PORT = int(os.getenv('PORT', 5000))
-
 app = Flask(__name__)
-bot = Bot(token=TOKEN)
 
-# Set up logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Get the WhatsApp API URL and access token from environment variables
+WHATSAPP_API_URL = os.getenv('WHATSAPP_API_URL')
+ACCESS_TOKEN = os.getenv('ACCESS_TOKEN')
 
-# Dummy property data
-properties = [
-    {'title': '2 Bedroom Apartment', 'location': 'Malingo', 'price': '$500', 'image': 'http://example.com/image1.jpg'},
-    {'title': '3 Bedroom House', 'location': 'Buea', 'price': '$750', 'image': 'http://example.com/image2.jpg'},
-    {'title': 'Studio Apartment', 'location': 'Molyko', 'price': '$300', 'image': 'http://example.com/image3.jpg'}
-]
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    data = request.json
+    print(data)  # Print incoming data for debugging
 
-async def start(update: Update, context: CallbackContext):
-    await update.message.reply_text('Welcome! Send /search to find properties.')
+    if 'entry' in data:
+        for entry in data['entry']:
+            for messaging_event in entry.get('changes', []):
+                value = messaging_event.get('value', {})
+                messages = value.get('messages', [])
+                for message in messages:
+                    from_number = message['from']
+                    text = message.get('text', {}).get('body', '')
 
-async def search(update: Update, context: CallbackContext):
-    buttons = []
-    for i, prop in enumerate(properties):
-        buttons.append([InlineKeyboardButton(
-            text=f"View {prop['title']}",
-            callback_data=f"view_{i}"
-        )])
+                    if text.lower().startswith('/search'):
+                        query = text[8:].strip()
+                        if query:
+                            results = perform_property_search(query)
+                            send_carousel_message(from_number, results)
+                        else:
+                            send_text_message(from_number, "Please provide a search query after /search.")
+    return jsonify({'status': 'success'})
 
-    reply_markup = InlineKeyboardMarkup(buttons)
-    await update.message.reply_text("Select a property to view:", reply_markup=reply_markup)
+def perform_property_search(query):
+    return [
+        {'id': '1', 'title': 'Luxury Villa', 'contact': 'https://example.com/contact/1', 'view': 'https://example.com/view/1', 'pay': 'https://example.com/pay/1'},
+        {'id': '2', 'title': 'Modern Apartment', 'contact': 'https://example.com/contact/2', 'view': 'https://example.com/view/2', 'pay': 'https://example.com/pay/2'},
+    ]
 
-async def button(update: Update, context: CallbackContext):
-    query = update.callback_query
-    await query.answer()
-    index = int(query.data.split('_')[1])
-    prop = properties[index]
-    caption = f"{escape_markdown(prop['title'])}\nLocation: {escape_markdown(prop['location'])}\nPrice: {escape_markdown(prop['price'])}"
-    await query.message.reply_photo(photo=prop['image'], caption=caption)
+def send_carousel_message(to, results):
+    headers = {
+        'Authorization': f'Bearer {ACCESS_TOKEN}',
+        'Content-Type': 'application/json',
+    }
 
-# Create the application object globally
-application = None
+    elements = []
+    for result in results:
+        elements.append({
+            'title': result['title'],
+            'buttons': [
+                {
+                    'type': 'postback',
+                    'title': 'Contact',
+                    'payload': result['contact'],
+                },
+                {
+                    'type': 'postback',
+                    'title': 'View',
+                    'payload': result['view'],
+                },
+                {
+                    'type': 'postback',
+                    'title': 'Pay',
+                    'payload': result['pay'],
+                },
+            ],
+        })
 
-async def main():
-    global application
-    application = Application.builder().token(TOKEN).build()
+    payload = {
+        'messaging_product': 'whatsapp',
+        'to': to,
+        'type': 'template',
+        'template': {
+            'name': 'carousel',
+            'language': {
+                'code': 'en_US'
+            },
+            'components': [
+                {
+                    'type': 'body',
+                    'elements': elements
+                }
+            ]
+        }
+    }
 
-    application.add_handler(CommandHandler('start', start))
-    application.add_handler(CommandHandler('search', search))
-    application.add_handler(CallbackQueryHandler(button))
+    response = requests.post(WHATSAPP_API_URL, headers=headers, json=payload)
+    print(response.json())  # Print the response for debugging
 
-    # Start the application
-    await application.initialize()
-    await application.start()
+def send_text_message(to, text):
+    headers = {
+        'Authorization': f'Bearer {ACCESS_TOKEN}',
+        'Content-Type': 'application/json',
+    }
 
-@app.route(f'/{TOKEN}', methods=['POST'])
-def respond():
-    # Retrieve the update from the request
-    update = Update.de_json(request.get_json(force=True), bot)
-    
-    # Check if the update has a message
-    if update.message:
-        chat_id = update.message.chat.id
-        msg_id = update.message.message_id
-        text = update.message.text.encode('utf-8').decode()
+    payload = {
+        'messaging_product': 'whatsapp',
+        'to': to,
+        'type': 'text',
+        'text': {
+            'body': text
+        }
+    }
 
-        # Define an async function to process the message
-        async def process_update():
-            try:
-                response = await get_response(text)
-                await bot.send_message(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
-            except Exception as e:
-                logger.error(f"Failed to send message: {e}")
-
-        # Run the async function
-        asyncio.run(process_update())
-    else:
-        logger.warning("Received update without a message")
-
-    return 'ok'
-
-async def get_response(text):
-    # Example response generation logic
-    return "This is a response to your message: " + text
+    response = requests.post(WHATSAPP_API_URL, headers=headers, json=payload)
+    print(response.json())  # Print the response for debugging
 
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
-    app.run(host='0.0.0.0', port=PORT)
+    app.run(debug=True)
