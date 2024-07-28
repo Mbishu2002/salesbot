@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import requests
 import os
 from dotenv import load_dotenv
@@ -12,6 +12,14 @@ app = Flask(__name__)
 WHATSAPP_API_URL = os.getenv('WHATSAPP_API_URL')
 ACCESS_TOKEN = os.getenv('ACCESS_TOKEN')
 VERIFY_TOKEN = os.getenv('VERIFY_TOKEN')
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/privacy-policy')
+def privacy_policy():
+    return render_template('policy.html')
 
 @app.route('/webhook', methods=['GET'])
 def verify_webhook():
