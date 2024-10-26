@@ -48,12 +48,11 @@ class WhatsAppHelper:
         
         return upload_result['id']
 
-    def send_carousel(self, to_phone_number, properties):
+    def send_carousel(self, to_phone_number, products):
         url = f"{self.base_url}/messages"
 
         carousel_cards = []
-        for index, prop in enumerate(properties):
-            media_id = self.upload_media(prop['video_url'])
+        for index, product in enumerate(products):
             card = {
                 "card_index": index,
                 "components": [
@@ -61,9 +60,9 @@ class WhatsAppHelper:
                         "type": "header",
                         "parameters": [
                             {
-                                "type": "video",
-                                "video": {
-                                    "id": media_id
+                                "type": "image",
+                                "image": {
+                                    "id": "921523083170453"
                                 }
                             }
                         ]
@@ -71,11 +70,11 @@ class WhatsAppHelper:
                     {
                         "type": "body",
                         "parameters": [
-                            {"type": "text", "text": prop['name']},
-                            {"type": "text", "text": prop['description']},
-                            {"type": "text", "text": prop['price']},
-                            {"type": "text", "text": prop['down_payment']},
-                            {"type": "text", "text": prop['location']}
+                            {"type": "text", "text": product['name']},
+                            {"type": "text", "text": product['description']},
+                            {"type": "text", "text": product['price']},
+                            {"type": "text", "text": product['rating']},
+                            {"type": "text", "text": product['store']}
                         ]
                     },
                     {
@@ -85,7 +84,7 @@ class WhatsAppHelper:
                         "parameters": [
                             {
                                 "type": "text",
-                                "text": str(index + 1)
+                                "text": product['product_code']
                             }
                         ]
                     }
@@ -98,7 +97,7 @@ class WhatsAppHelper:
             "to": to_phone_number,
             "type": "template",
             "template": {
-                "name": "property_search_carousel_v4",
+                "name": "product_search_carousel_v4",
                 "language": {
                     "code": "en_US"
                 },

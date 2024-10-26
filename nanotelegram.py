@@ -41,34 +41,39 @@ def webhook():
                     from_number = message['from']
                     text = message.get('text', {}).get('body', '')
 
-                    if text.lower().startswith('/search'):
-                        query = text[8:].strip()
-                        if query:
-                            results = perform_property_search(query)
-                            send_carousel_message(from_number, results)
-                        else:
-                            send_text_message(from_number, "Please provide a search query after /search.")
+                    # Send carousel for any incoming message
+                    results = perform_product_search(text)
+                    send_carousel_message(from_number, results)
+
     return jsonify({'status': 'success'})
 
-def perform_property_search(query):
-    # This is a placeholder. In a real application, you would query your database or API.
+def perform_product_search(query):
+    # This function now returns dummy product data for any query
     return [
         {
-            "name": "Luxury Apt",
-            "description": "3BR view",
-            "price": "$500k",
-            "down_payment": "$25k",
-            "location": "Downtown",
-            "video_url": "https://example.com/luxury_apt_video.mp4"
+            "name": "Smartphone X",
+            "description": "Latest model, 5G",
+            "price": "$999",
+            "rating": "4.5 stars",
+            "store": "TechZone",
+            "product_code": "SMRT001"
         },
         {
-            "name": "Cozy Studio",
-            "description": "Quiet area",
-            "price": "$150k",
-            "down_payment": "$7.5k",
-            "location": "Suburbs",
-            "video_url": "https://example.com/cozy_studio_video.mp4"
+            "name": "Laptop Pro",
+            "description": "Powerful & lightweight",
+            "price": "$1499",
+            "rating": "4.7 stars",
+            "store": "ComputerWorld",
+            "product_code": "LPTP002"
         },
+        {
+            "name": "Wireless Earbuds",
+            "description": "Noise-cancelling",
+            "price": "$199",
+            "rating": "4.3 stars",
+            "store": "AudioHub",
+            "product_code": "WLEB003"
+        }
     ]
 
 def send_carousel_message(to, results):
