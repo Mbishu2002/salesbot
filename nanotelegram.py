@@ -81,7 +81,7 @@ def format_product_for_carousel(product):
         "price": f"${product['price']}",
         "rating": f"{random.uniform(3.5, 5.0):.1f}",
         "store": product['shop']['name'],
-        "product_code": product['id']
+        "product_code": product['sku']
     }
 
 def send_carousel_message(to, results):
@@ -178,10 +178,7 @@ def send_individual_product_message(to, product):
                     "sub_type": "url",
                     "index": "0",
                     "parameters": [
-                        {
-                            "type": "text",
-                            "text": f"https://nanoweb.pages.dev/product/{product['product_code']}"
-                        }
+                        { "type": "text", "text": product['product_code'] }
                     ]
                 }
             ]
