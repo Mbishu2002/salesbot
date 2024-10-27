@@ -54,7 +54,7 @@ def webhook():
 
 def perform_product_search(query):
     # Make API call to search for products
-    url = f"http://127.0.0.1:8000/api/v1/products/search/?q={query}"
+    url = f"https://elegant-crow-curiously.ngrok-free.app/api/v1/products/search/?q={query}"
     response = requests.get(url)
     if response.status_code == 200:
         products = response.json()
